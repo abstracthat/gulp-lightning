@@ -1,8 +1,8 @@
 {
   "name": "gulp-lightning",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "Gulp front-end development",
-  "main": "gulp-lightning.coffee",
+  "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
