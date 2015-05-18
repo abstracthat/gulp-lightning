@@ -197,7 +197,7 @@
       return rsync({
         ssh: true,
         src: "" + config.production + "/",
-        dest: server,
+        dest: config.server,
         recursive: true,
         syncDest: true,
         args: ['--verbose']
