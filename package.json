@@ -1,8 +1,8 @@
 {
   "name": "gulp-lightning",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "Gulp front-end development",
-  "main": "index.js",
+  "main": "build/index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -64,7 +64,9 @@
     "rsyncwrapper": "^0.4.1",
     "run-sequence": "^1.0.2",
     "rupture": "^0.6.1",
+    "stylus-lightning": "^1.0.0",
     "through2": "^0.6.5",
+    "typogr": "^0.6.5",
     "yamljs": "^0.2.1"
   }
 }

@@ -1,7 +1,6 @@
-# Pass in local Gulp when requiring, i.e.
-# require('gulp-lightning')(require 'gulp')
+# Pass in local Gulp and options object
 
-module.exports = (gulp) ->
+module.exports = (gulp, options) ->
   
   # Load all 'gulp-' plugins from package.json
   plugins = (require 'gulp-load-plugins')()
@@ -26,6 +25,7 @@ module.exports = (gulp) ->
   rupture = require 'rupture'
   grid = require 'happy-grid'
   downbeat = require 'downbeat'
+  lib = require 'stylus-lightning'
 
   # Date parsing
   moment = require 'moment'
@@ -33,7 +33,8 @@ module.exports = (gulp) ->
   del = require 'del'
   jade = require 'jade'
   _ = require 'lodash'
-  folder = (require 'path').dirname
+  typography = require 'typogr'
+  {dirname} = require 'path'
 
   # Enable markdown blocks in Jade
   marked = require 'marked'
@@ -46,31 +47,64 @@ module.exports = (gulp) ->
   # Pages in Collections are sorted by date
   map = require './map'
 
-  # Settings: server and paths
-  server = 'projects:/var/www/sitelightning.co'
-  path =
-    stylus: 'source/styles/**/*.styl'
-    mainStylus: 'source/styles/main.styl'
-    coffee: 'source/scripts/**/*.coffee'
-    content: 'source/content/**/*.{jade,md}'
-    markdown: 'source/content/**/*.md'
-    jade: 'source/content/**/*.jade'
-    allContent: 'source/{content,templates}/**/*'
-    images: 'source/images'
-    fonts: 'source/fonts'
-    development: './development'
-    production: './production'
+  # Asset Paths
+  config =
+    server: ''
+    source: 'source'
+    development: 'development'
+    production: 'production'
+    assets:
+      styles: 'source/styles'
+      scripts: 'source/scripts'
+      content: 'source/content'
+      templates: 'source/templates'
+      images: 'source/images'
+      fonts: 'source/fonts'
 
-  directory = 'source/content'
+  # Extend/overwrite the config defaults with options object passed in
+  # TODO: Passing in different content folder caused errors. Needs debugging.
+  # Works ok for passing server.
+  _.extend config, options
 
-  # Build json sitemap
+  # Build site's structured data map
   gulp.task 'map', (done) ->
-    map done
+    map config, done
+
+  # Compile Jade source
+  gulp.task 'jade', ->
+    site = require "#{process.cwd()}/site.json"
+    gulp.src ["#{config.assets.content}/**/*.jade", "!#{config.assets.content}/_includes/**/*"]
+    .pipe plugins.plumber()
+    # Add the file's front-matter to the file.data object
+    .pipe plugins.frontMatter
+      property: 'data'
+    # Transform and extend the file.data object
+    .pipe plugins.data (file) ->
+      date = new Date(file.data.date)
+      if file.data.date
+        file.data.datetime = moment(date).format()
+        file.data.date = moment(date).format('MMMM Do, YYYY')
+      file.data.url = (file.path.slice (file.path.indexOf config.assets.content) + config.assets.content.length)
+      .replace /\/?(index)?(\.jade$|\.md$|\.html$)/, '/'
+      file.data.collection =  dirname file.data.url
+      # Smartypants the meta (quotes, en/em dashes, apostrophes, ellipsis)
+      for meta in ['title', 'description', 'og_title', 'og_description', 'twitter_title', 'twitter_description']
+        if file.data[meta]
+          file.data[meta] = typography(file.data[meta]).chain().smartypants().value()
+      # Include lodash for Jade templates
+      file.data._ = require 'lodash'
+      data = _.extend {}, site, file.data
+    .pipe plugins.jade
+      pretty: true
+    # Rename all files to filename/index.html
+    .pipe plugins.prettyUrl()
+    .pipe gulp.dest config.development
 
   # Compile Markdown source through Jade layout
+  # TODO: DRY, some duplication of Jade task
   gulp.task 'markdown', ->
     site = require "#{process.cwd()}/site.json"
-    gulp.src path.markdown
+    gulp.src ["#{config.assets.content}/**/*.md", "!#{config.assets.content}/_includes/**/*"]
     .pipe plugins.plumber()
     .pipe plugins.frontMatter
       property: 'data'
@@ -82,50 +116,26 @@ module.exports = (gulp) ->
       if file.data.date
         file.data.datetime = moment(date).format()
         file.data.date = moment(date).format('MMMM Do, YYYY')
-      file.data.layout = "./source/templates/#{file.data.layout}.jade"
+      file.data.layout = "#{config.assets.templates}/#{file.data.layout}.jade"
+      # Set Jade pretty html option
       file.data.pretty = true
-      file.data.url = file.path.slice (file.path.indexOf directory) + directory.length
-      .replace /(index)?(\.jade$|\.md$|\.html$)/, ''
-      file.data.url += '/' if file.data.url.slice(-1) isnt '/'
-      file.data.collection = (folder file.data.url) + '/'
+      file.data.url = (file.path.slice (file.path.indexOf config.assets.content) + config.assets.content.length)
+      .replace /\/?(index)?(\.jade$|\.md$|\.html$)/, '/'
+      file.data.collection = (dirname file.data.url) + '/'
+      for meta in ['title', 'description', 'og_title', 'og_description', 'twitter_title', 'twitter_description']
+        if file.data[meta]
+          file.data[meta] = typography(file.data[meta]).chain().smartypants().value()
       file.data._ = require 'lodash'
-      file.data.moment = require 'moment'
+      file.data.typography = (require 'typogr').typogrify
       data = _.extend {}, site, file.data
     .pipe plugins.layout (file) ->
       file.data
     .pipe plugins.prettyUrl()
-    .pipe gulp.dest path.development
-
-  # Compile Jade source
-  gulp.task 'jade', ->
-    site = require "#{process.cwd()}/site.json"
-    gulp.src path.jade
-    .pipe plugins.plumber()
-    .pipe plugins.frontMatter
-      property: 'data'
-    .pipe plugins.data (file) ->
-      date = new Date(file.data.date)
-      if file.data.date
-        file.data.datetime = moment(date).format()
-        file.data.date = moment(date).format('MMMM Do, YYYY')
-      file.data.url = (file.path.slice (file.path.indexOf directory) + directory.length)
-      .replace /(index)?(\.jade$|\.md$|\.html$)/, ''
-      file.data.url += '/' if file.data.url.slice(-1) isnt '/'
-      file.data.collection = folder file.data.url
-      unless file.data.url.slice -1 is '/'
-        file.data.url = "#{file.data.url}/"
-      file.data._ = require 'lodash'
-      file.data.moment = require 'moment'
-      data = _.extend {}, site, file.data
-    .pipe plugins.jade
-      pretty: true
-    # Rename all files to filename/index.html
-    .pipe plugins.prettyUrl()
-    .pipe gulp.dest path.development
+    .pipe gulp.dest config.development
 
   # Compile stylus to css with sourcemaps
   gulp.task 'stylus', ->
-    gulp.src path.mainStylus
+    gulp.src "#{config.assets.styles}/main.styl"
     .pipe plugins.plumber()
     .pipe plugins.sourcemaps.init()
     .pipe plugins.stylus
@@ -134,6 +144,7 @@ module.exports = (gulp) ->
           implicit: false
         axis
           implicit: false
+        lib()
         grid()
         downbeat()
       ]
@@ -146,29 +157,29 @@ module.exports = (gulp) ->
         'Explorer >= 9'
       ]
     .pipe plugins.sourcemaps.write()
-    .pipe gulp.dest path.development
+    .pipe gulp.dest config.development
     .pipe reload stream: true
 
   # Compile coffeescript to js with sourcemaps
   gulp.task 'coffee', ->
-    gulp.src path.coffee
+    gulp.src "#{config.assets.scripts}/**/*.coffee"
     .pipe plugins.plumber()
     .pipe plugins.sourcemaps.init()
     .pipe plugins.coffee()
     # show coffeescript errors in the console
     .on 'error', plugins.util.log
     .pipe plugins.sourcemaps.write()
-    .pipe gulp.dest path.development
+    .pipe gulp.dest config.development
 
   # Use browserify to compile any require statments
   gulp.task 'js', ['coffee', 'bower'], ->
-    gulp.src "#{path.development}/main.js"
+    gulp.src "#{config.development}/main.js"
     .pipe plugins.plumber()
     .pipe through (file, enc, next) ->
       (browserify file.path).bundle (err, res) ->
         file.contents = res
         next null, file
-    .pipe gulp.dest path.development
+    .pipe gulp.dest config.development
 
   # Install Bower dependencies and move to development lib folder
   # To use a library add it to build blocks in base.jade
@@ -179,11 +190,10 @@ module.exports = (gulp) ->
   gulp.task 'bower', ['installBower'], ->
     if exists './bower_components'
       gulp.src bowerFiles()
-      .pipe gulp.dest "#{path.development}/lib"
+      .pipe gulp.dest "#{config.development}/lib"
 
   # Compile source files for development
   gulp.task 'compile', [
-    'bower'
     'js'
     'jade'
     'markdown'
@@ -195,60 +205,61 @@ module.exports = (gulp) ->
   gulp.task 'optimize', ->
     # parse the html files for build blocks
     # return the concatenated file for each block
-    assets = plugins.useref.assets searchPath: path.development
-    gulp.src "#{path.development}/**/*.html"
+    assets = plugins.useref.assets searchPath: config.development
+    gulp.src "#{config.development}/**/*.html"
     .pipe assets
     # minify css and js
     .pipe plugins.if '*.css', plugins.csso()
     .pipe plugins.if '*.js', plugins.uglify()
-    .pipe gulp.dest path.production
+    .pipe gulp.dest config.production
     # bring back just the html files
     .pipe assets.restore()
     # remove/replace the build blocks
     .pipe plugins.useref()
     # minify the html
     .pipe plugins.if '*.html', plugins.minifyHtml()
-    .pipe gulp.dest path.production
+    .pipe gulp.dest config.production
 
   # cache bust asset file names
-  gulp.task 'cacheref', ->
-    bust = new plugins.cachebust()
-
-    gulp.src "#{path.production}/**/*.css"
+  bust = new plugins.cachebust()
+  gulp.task 'cacheresources', ->
+    gulp.src "#{config.production}/**/*.css"
     .pipe bust.resources()
-    .pipe gulp.dest path.production
+    .pipe gulp.dest config.production
 
-    gulp.src "#{path.production}/**/*.js"
+    gulp.src "#{config.production}/**/*.js"
     .pipe bust.resources()
-    .pipe gulp.dest path.production
+    .pipe gulp.dest config.production
 
-    gulp.src "#{path.production}/**/*.html"
+  # replace references to new cachebusted file names
+  gulp.task 'cacheref', ['cacheresources'], ->
+    gulp.src "#{config.production}/**/*.html"
     .pipe bust.references()
-    .pipe gulp.dest path.production
+    .pipe gulp.dest config.production
 
   # cleanup cachebust assets
   gulp.task 'cachebust', ['cacheref'], (done) ->
     del [
-      "#{path.production}/script.min.js"
-      "#{path.production}/style.min.css"
+      "#{config.production}/script.min.js"
+      "#{config.production}/style.min.css"
       ], done()
 
   # Optimize and move images
   gulp.task 'images', ->
-    gulp.src "#{path.images}/*"
+    gulp.src "#{config.assets.images}/*"
     .pipe plugins.plumber()
     .pipe plugins.cache plugins.imagemin
       progressive: true
       interlaced: true
-    .pipe gulp.dest "production/images"
+    .pipe gulp.dest "#{config.production}/images"
 
   # Move other files for production
   gulp.task 'move', ->
     gulp.src [
-      'source/fonts/**/*'
-      'source/robots.txt'
+      "#{config.assets.fonts}/**/*"
+      "#{config.source}/robots.txt"
     ]
-    .pipe gulp.dest "#{path.production}"
+    .pipe gulp.dest config.production
 
   # Clear Gulp cache
   gulp.task 'clear', (done) ->
@@ -257,8 +268,8 @@ module.exports = (gulp) ->
   # Delete development and production build folders
   gulp.task 'clean', ['clear'], (done) ->
     del [
-      path.development
-      path.production
+      config.development
+      config.production
       './bower_components'
       'site.json'
     ], done()
@@ -268,28 +279,25 @@ module.exports = (gulp) ->
     browserSync.init
       notify: false
       server:
-        baseDir: [
-          path.development
-          './source'
-        ]
+        baseDir: [config.development, config.source]
 
     # Watch for changes
-    gulp.watch path.allContent, ['jade', 'markdown', reload]
-    gulp.watch path.stylus, ['stylus']
-    gulp.watch path.coffee, ['js', reload]
-    gulp.watch path.images, reload
+    gulp.watch "{#{config.assets.content},#{config.assets.templates}}/**/*", ['jade', 'markdown', reload]
+    gulp.watch "#{config.assets.styles}/**/*", ['stylus']
+    gulp.watch "#{config.assets.scripts}/**/*", ['js', reload]
+    gulp.watch "#{config.assets.images}/**/*", reload
 
   # Open a web browser to test final production build
   gulp.task 'previewBrowser', ->
     browserSync
       server:
-        baseDir: path.production
+        baseDir: config.production
 
   # rsync the build directory to your server
   gulp.task 'rsync', (done) ->
     rsync
       ssh: true
-      src: "#{path.production}/"
+      src: "#{config.production}/"
       dest: server
       recursive: true
       syncDest: true
