@@ -10,7 +10,7 @@
 
   directories = (require('node-dir')).subdirs;
 
-  glob = require('glob');
+  glob = require('globby');
 
   yaml = require('yamljs');
 
@@ -78,7 +78,7 @@
       });
     };
     createMap = function(cb) {
-      return glob("./" + config.assets.content + "/[!_]**/*", {
+      return glob(["./" + config.assets.content + "/**/*", "!./" + config.assets.content + "/_includes/**/*"], {
         nodir: true
       }, function(err, files) {
         var $, collection, content, data, file, image, intro, meta, post, _k, _len2;

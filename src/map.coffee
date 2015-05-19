@@ -3,7 +3,7 @@ path = require 'path'
 
 _ = require 'lodash'
 directories = (require 'node-dir').subdirs
-glob = require 'glob'
+glob = require 'globby'
 yaml = require 'yamljs'
 moment = require 'moment'
 cheerio = require 'cheerio'
@@ -51,7 +51,7 @@ module.exports = (config, done) ->
 
   # Read the files and add the metadata to the site object
   createMap = (cb) ->
-    glob "./#{config.assets.content}/[!_]**/*", nodir: true, (err, files) ->
+    glob ["./#{config.assets.content}/**/*", "!./#{config.assets.content}/_includes/**/*"], nodir: true, (err, files) ->
       console.error if err
       for file in files
         data = fs.readFileSync file, 'utf8'
