@@ -62,9 +62,8 @@ module.exports = (gulp, options) ->
       fonts: 'source/fonts'
 
   # Extend/overwrite the config defaults with options object passed in
-  # TODO: Passing in different content folder caused errors. Needs debugging.
-  # Works ok for passing server.
-  _.extend config, options
+  # TODO: Fix / Implement this
+  # _.extend config, options
 
   # Build site's structured data map
   gulp.task 'map', (done) ->
@@ -298,7 +297,7 @@ module.exports = (gulp, options) ->
     rsync
       ssh: true
       src: "#{config.production}/"
-      dest: config.server
+      dest: options.server
       recursive: true
       syncDest: true
       args: ['--verbose']

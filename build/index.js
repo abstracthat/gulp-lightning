@@ -42,7 +42,6 @@
         fonts: 'source/fonts'
       }
     };
-    _.extend(config, options);
     gulp.task('map', function(done) {
       return map(config, done);
     });
@@ -197,7 +196,7 @@
       return rsync({
         ssh: true,
         src: "" + config.production + "/",
-        dest: server,
+        dest: options.server,
         recursive: true,
         syncDest: true,
         args: ['--verbose']
