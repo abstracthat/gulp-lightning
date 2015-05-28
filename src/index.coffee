@@ -257,7 +257,9 @@ module.exports = (gulp, options) ->
     gulp.src [
       "#{config.assets.fonts}/**/*"
       "#{config.source}/robots.txt"
-    ]
+      "#{config.source}/.redirects.conf"
+      "!#{config.source}/**/.keep"
+    ], dot: true
     .pipe gulp.dest config.production
 
   # Clear Gulp cache

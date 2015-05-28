@@ -165,7 +165,9 @@
       }))).pipe(gulp.dest("" + config.production + "/images"));
     });
     gulp.task('move', function() {
-      return gulp.src(["" + config.assets.fonts + "/**/*", "" + config.source + "/robots.txt"]).pipe(gulp.dest(config.production));
+      return gulp.src(["" + config.assets.fonts + "/**/*", "" + config.source + "/robots.txt", "" + config.source + "/.redirects.conf", "!" + config.source + "/**/.keep"], {
+        dot: true
+      }).pipe(gulp.dest(config.production));
     });
     gulp.task('clear', function(done) {
       return plugins.cache.clearAll(done);
