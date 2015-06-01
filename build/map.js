@@ -92,7 +92,7 @@
           meta = content.attributes;
           post = '';
           page = {};
-          page.url = file.slice((file.indexOf(config.assets.content)) + config.assets.content.length).replace(/(index)?(\.jade$|.\md$)/, '');
+          page.url = file.slice((file.indexOf(config.assets.content)) + config.assets.content.length).replace(/((\/)index)?(\.jade$|.\md$)/, '$2');
           if (meta.title) {
             page.title = typography(meta.title).chain().smartypants().value();
           }

@@ -62,7 +62,7 @@ module.exports = (config, done) ->
         # Build the parsed page metadata
         page = {}
         page.url = file.slice (file.indexOf config.assets.content) + config.assets.content.length
-        .replace /(index)?(\.jade$|.\md$)/, ''
+        .replace /((\/)index)?(\.jade$|.\md$)/, '$2'
         page.title = typography(meta.title).chain().smartypants().value() if meta.title
         page.description = typography(meta.description).chain().smartypants().value() if meta.description
         page.tags = meta.tags if meta.tags

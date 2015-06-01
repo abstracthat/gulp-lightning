@@ -1,6 +1,6 @@
 {
   "name": "gulp-lightning",
-  "version": "2.1.5",
+  "version": "2.1.6",
   "description": "Gulp front-end development",
   "main": "build/index.js",
   "scripts": {
