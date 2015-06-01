@@ -75,6 +75,7 @@ module.exports = (config, done) ->
         # Compile markdown and load html into cheerio
         if (path.extname file) is '.md'
           post = markdown content.body
+          page.post = post
           $ = cheerio.load post
 
           # unless intro is given in meta, take the first paragraph of the post

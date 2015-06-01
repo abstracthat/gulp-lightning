@@ -108,6 +108,7 @@
           }
           if ((path.extname(file)) === '.md') {
             post = markdown(content.body);
+            page.post = post;
             $ = cheerio.load(post);
             if (meta.intro) {
               page.intro = meta.intro;
