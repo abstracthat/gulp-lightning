@@ -35,6 +35,7 @@ module.exports = (gulp, options) ->
   _ = require 'lodash'
   typography = require 'typogr'
   {dirname} = require 'path'
+  yaml = require 'yamljs'
 
   # Enable markdown blocks in Jade
   marked = require 'marked'
@@ -42,6 +43,8 @@ module.exports = (gulp, options) ->
   marked.setOptions
     smartypants: true
     breaks: true
+  stylus = require 'stylus'
+  jade.filters.stylus = stylus.render
 
   # My module to create site.json, a map of structured data for the site
   # Pages in Collections are sorted by date
@@ -60,6 +63,7 @@ module.exports = (gulp, options) ->
       templates: 'source/templates'
       images: 'source/images'
       fonts: 'source/fonts'
+      email: 'source/email'
 
   # Extend/overwrite the config defaults with options object passed in
   # TODO: Fix / Implement this
@@ -271,6 +275,7 @@ module.exports = (gulp, options) ->
     del [
       config.development
       config.production
+      "#{config.assets.email}/build"
       './bower_components'
       'site.json'
     ], done()
@@ -306,6 +311,49 @@ module.exports = (gulp, options) ->
     , (erro, stdout, stderr, cmd) ->
       plugins.util.log(stdout)
       done()
+
+  # Email Tasks
+  gulp.task 'email:jade', ['map'], ->
+    site = require "#{process.cwd()}/site.json"
+    gulp.src "#{config.assets.email}/templates/*.jade"
+    .pipe plugins.plumber()
+    .pipe plugins.jade
+      jade: jade
+      pretty: true
+      locals: site
+    .pipe plugins.inlineCss
+      preserveMediaQueries: true
+      applyLinkTags: false
+      removeLinkTags: false
+    .pipe gulp.dest "#{config.assets.email}/build"
+
+  gulp.task 'email:text', ['email:jade'], ->
+    gulp.src "#{config.assets.email}/build/*.html"
+    .pipe plugins.html2txt()
+    .pipe gulp.dest "#{config.assets.email}/build"
+
+  gulp.task 'email:images', ->
+    gulp.src "#{config.assets.email}/images/*"
+    .pipe gulp.dest "#{config.assets.email}/build/images"
+
+  gulp.task 'email:browser', ->
+    browserSync.init
+      notify: false
+      server:
+        baseDir: "#{config.assets.email}/build"
+
+    # Watch for changes
+    gulp.watch ["#{config.assets.email}/styles/**/*", "#{config.assets.email}/templates/**/*"], ['email:reload']
+    gulp.watch "#{config.assets.email}/images/*", reload
+
+  gulp.task 'email:reload', ['email:text'], ->
+    reload()
+
+  gulp.task 'email', [
+    'email:text'
+    'email:images'
+    'email:browser'
+  ]
 
   #################
   # Main Gulp Tasks
