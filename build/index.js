@@ -109,6 +109,14 @@
         return file.data;
       })).pipe(plugins.prettyUrl()).pipe(gulp.dest(config.development));
     });
+    gulp.task('feed', function() {
+      var site;
+      site = require("" + (process.cwd()) + "/site.json");
+      return gulp.src("" + config.assets.templates + "/feed.jade").pipe(plugins.jade({
+        locals: site,
+        jade: jade
+      })).pipe(plugins.rename('feed.xml')).pipe(gulp.dest(config.development));
+    });
     gulp.task('stylus', function() {
       return gulp.src("" + config.assets.styles + "/main.styl").pipe(plugins.plumber()).pipe(plugins.sourcemaps.init()).pipe(plugins.stylus({
         use: [
@@ -143,7 +151,7 @@
         return gulp.src(bowerFiles()).pipe(gulp.dest("" + config.development + "/lib"));
       }
     });
-    gulp.task('compile', ['js', 'jade', 'markdown', 'stylus']);
+    gulp.task('compile', ['js', 'jade', 'feed', 'markdown', 'stylus']);
     gulp.task('optimize', function() {
       var assets;
       assets = plugins.useref.assets({
@@ -169,7 +177,7 @@
       }))).pipe(gulp.dest("" + config.production + "/images"));
     });
     gulp.task('move', function() {
-      return gulp.src(["" + config.assets.fonts + "/**/*", "" + config.source + "/robots.txt", "" + config.source + "/.redirects.conf", "!" + config.source + "/**/.keep"], {
+      return gulp.src(["" + config.assets.fonts + "/**/*", "" + config.development + "/feed.xml", "" + config.source + "/robots.txt", "" + config.source + "/.redirects.conf", "!" + config.source + "/**/.keep"], {
         dot: true
       }).pipe(gulp.dest(config.production));
     });

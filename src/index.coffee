@@ -136,6 +136,16 @@ module.exports = (gulp, options) ->
     .pipe plugins.prettyUrl()
     .pipe gulp.dest config.development
 
+  # Atom XML Feed
+  gulp.task 'feed', ->
+    site = require "#{process.cwd()}/site.json"
+    gulp.src "#{config.assets.templates}/feed.jade"
+    .pipe plugins.jade
+      locals: site
+      jade: jade
+    .pipe plugins.rename 'feed.xml'
+    .pipe gulp.dest config.development
+
   # Compile stylus to css with sourcemaps
   gulp.task 'stylus', ->
     gulp.src "#{config.assets.styles}/main.styl"
@@ -199,6 +209,7 @@ module.exports = (gulp, options) ->
   gulp.task 'compile', [
     'js'
     'jade'
+    'feed'
     'markdown'
     'stylus'
   ]
@@ -260,6 +271,7 @@ module.exports = (gulp, options) ->
   gulp.task 'move', ->
     gulp.src [
       "#{config.assets.fonts}/**/*"
+      "#{config.development}/feed.xml"
       "#{config.source}/robots.txt"
       "#{config.source}/.redirects.conf"
       "!#{config.source}/**/.keep"
