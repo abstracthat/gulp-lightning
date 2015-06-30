@@ -1,5 +1,6 @@
 fs = require 'fs'
 path = require 'path'
+exists = (require 'fs').existsSync
 
 _ = require 'lodash'
 directories = (require 'node-dir').subdirs
@@ -13,36 +14,36 @@ markdown = require 'marked'
 markdown.setOptions
   smartypants: true
 
-# scaffold the site object
-map =
-  site:
-    name: ''
-    url: ''
-    title: ''
-    description: ''
-  pages: {}
-  collections: {}
-
-# pass in some site variables via site.yml
-_.extend map, yaml.load './site.yml'
-
-# smartypants: convert apostrophes, en/em dash, quotes
-# TODO: DRY this out
-map.site.name = typography(map.site.name).chain().smartypants().value()
-if map.header
-  for page in map.header
-    page.title = typography(page.title).chain().smartypants().value()
-if map.footer
-  for page in map.footer
-    page.title = typography(page.title).chain().smartypants().value()
-
 module.exports = (config, done) ->
+
+  # scaffold the site object
+  map =
+    site:
+      name: ''
+      url: ''
+      title: ''
+      description: ''
+    pages: {}
+    collections: {}
+
+  # pass in some site variables via site.yml
+  _.extend map, yaml.load "./site/site.yml"
+
+  # smartypants: convert apostrophes, en/em dash, quotes
+  # TODO: DRY this out
+  map.site.name = typography(map.site.name).chain().smartypants().value()
+  if map.header
+    for page in map.header
+      page.title = typography(page.title).chain().smartypants().value()
+  if map.footer
+    for page in map.footer
+      page.title = typography(page.title).chain().smartypants().value()
 
   # Get the collections (folders) first so we can sort our pages into them
   getCollections = (cb) -> 
-    directories "./#{config.assets.content}", (err, collections) ->
+    directories "./#{config.site.content}", (err, collections) ->
       for collection in collections
-        url = "#{collection}/".replace config.assets.content, ''
+        url = "#{collection}/".replace config.site.content, ''
         unless url is '/_includes/'
           map.collections[url] =
             url: url
@@ -51,18 +52,28 @@ module.exports = (config, done) ->
 
   # Read the files and add the metadata to the site object
   createMap = (cb) ->
-    glob ["./#{config.assets.content}/**/*", "!./#{config.assets.content}/_includes/**/*"], nodir: true, (err, files) ->
+    glob ["./#{config.site.content}/**/*.{jade,md}", "!./#{config.site.content}/_includes/**/*"], nodir: true, (err, files) ->
       console.error if err
       for file in files
         data = fs.readFileSync file, 'utf8'
         content = frontMatter data
-        meta = content.attributes
+        meta = content.attributes or {}
         post = ''
-        
+
         # Build the parsed page metadata
         page = {}
-        page.url = file.slice (file.indexOf config.assets.content) + config.assets.content.length
+        page.url = file.slice (file.indexOf config.site.content) + config.site.content.length
         .replace /((\/)index)?(\.jade$|.\md$)/, '$2'
+
+        # if there is a yml file that matches the slug update the content meta
+        if page.url.match /\/$/
+          metaDataFile = "./#{config.site.content}#{page.url}/index.yml"
+        else
+          metaDataFile = "./#{config.site.content}#{page.url}.yml"
+
+        if exists metaDataFile
+          meta = _.merge (yaml.load metaDataFile), meta
+
         page.title = typography(meta.title).chain().smartypants().value() if meta.title
         page.description = typography(meta.description).chain().smartypants().value() if meta.description
         page.tags = meta.tags if meta.tags
@@ -82,7 +93,8 @@ module.exports = (config, done) ->
           if meta.intro
             page.intro = meta.intro
           else
-            intro = $('p').first().html()
+            # markdown wraps images in <p>, take the first <p> with no <img>
+            intro = $('p:not(:has(img))').first().html()
             page.intro = intro if intro
 
           # unless image is given in meta, take the first image from the post
@@ -131,7 +143,7 @@ module.exports = (config, done) ->
 
   # Write the site object to site.json
   writeJSON = (done) ->
-    fs.writeFileSync './site.json', JSON.stringify map
+    fs.writeFileSync "./#{config.site.source}/site.json", JSON.stringify map
     done()
 
   # Main Program

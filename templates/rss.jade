@@ -1,0 +1,24 @@
+doctype xml
+rss(
+  version='2.0'
+  xmlns:content='http://purl.org/rss/1.0/modules/content/'
+  xmlns:media='http://search.yahoo.com/mrss/')
+  channel
+    title!= site.title
+    link= site.url
+    description!= site.description
+    lastbuilddate= (new Date).toISOString()
+    each collection, index in collections
+      each page in collections[index].pages
+        item
+          title!= page.title
+          link= site.url + page.url
+          pubdate= page.datetime
+          author= author.name
+          category!= collection.title
+          description
+            <!--[CDATA[!{page.description.trim()}]]-->
+          content:encoded
+            <!--[CDATA[!{page.post.trim()}]]-->
+          if page.image
+            media:content(url='#{site.url}#{page.image}', type='image/*')

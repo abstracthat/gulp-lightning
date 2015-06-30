@@ -1,0 +1,66 @@
+type: auto # regular,absplit,plaintext,rss,auto
+
+options:
+  title: default
+  folder_id: 
+  list_id: 
+  subject: 150 characters max
+  to_name: "*|FNAME|*"
+  tracking:
+    opens: true
+    html_clicks: true
+    text_clicks: true
+
+segment_opts:
+  saved_segment_id:
+  match: all # any, all
+
+  # up to five conditions in array
+  conditions:
+    # date
+    - field: date
+      op: eq # eq,gt,lt
+      value: last_campaign_sent # last_campaign_sent,campaign_id,YYYY-MM-DD
+
+    # subscriber activity
+    - field: aim
+      op: noopen # open,noopen,click,noclick,sent,nosent
+      value: any # any,campaign_id
+
+    # Merge Vars
+    - field: # Merge0..Merge30
+      op: # eq (=), ne (!=), gt (>), lt (<), like ('%blah%'), nlike ('%blah%'), starts ('blah%'), ends ('%blah'), blank, nblank
+      value: 
+
+type_opts:
+  rss:
+    url: 
+    schedule: weekly # daily, weekly, monthly
+    schedule_hour: 8 # 0-24 local time
+    schedule_weekday: 5 # 0 (sunday) — 6 (saturday)
+
+  absplit:
+    split_test: subject # subject,from_name,schedule
+    pick_winner: # opens,clicks,manual
+    wait_units: 86400 # 3600,86400
+    wait_time: 1
+    split_size: 20
+    subject_a: 
+    subject_b: 
+    from_name_a:
+    from_name_b:
+    from_email_a:
+    from_email_b:
+
+  auto:
+    offset-units: day # day,week,month,year
+    offset-time: 1
+    schedule_hour: 8
+    offset-dir: after # after,before
+    event: signup # signup,date,annual,birthday,mergeChanged,campaignOpen,campaignClicka,campaignClicko (clicks on a specific URL in a campaign)
+    # if event is date, annual, birthday, mergeChanged
+    event-datemerge: 
+    # if event is campaignOpen, campaignClicka, campaignClicko
+    campaign_id: 
+    # if event is campaignClicko
+    campaign_url: 
