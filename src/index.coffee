@@ -132,10 +132,12 @@ module.exports = (gulp, options) ->
 
     # prepare markdown files for running through jade template layout
     if (path.extname file.path) is '.md'
-      # if there is no layout defined use 'post'
-      file.data.layout = 'post' unless file.data.layout
       # add the full path to the jade template
-      file.data.layout = "#{config.site.templates}/#{file.data.layout}.jade"
+      if file.data.layout
+        file.data.layout = "#{config.site.templates}/#{file.data.layout}.jade"
+      # if there is no layout defined use 'post'
+      else
+        file.data.layout = "#{config.site.templates}/post.jade"
       # set the jade pretty setting
       file.data.pretty = true
 
@@ -440,14 +442,18 @@ module.exports = (gulp, options) ->
     file.attributes.list ?= 'default'
     file.mailChimp.options.list_id = locals.lists[file.attributes.list]
     delete file.attributes.list
-
-    file.data.layout ?= file.mailChimp.layout
+    
+    # file.attributes.layout ?= file.mailChimp.layout
     # move front-matter attributes into file.data for Jade to use
     for key, value of file.attributes
       file.data[key] = value
 
     if (path.extname file.path) is '.md'
-      file.data.layout = "#{config.email.templates}/#{file.data.layout}.jade"
+      # if there is no layout defined use 'short'
+      if file.attributes.layout
+        file.data.layout = "#{config.email.templates}/#{file.attributes.layout}.jade"
+      else
+        file.data.layout = "#{config.email.templates}/short.jade"
       # Set Jade pretty html option
       file.data.pretty = true
 

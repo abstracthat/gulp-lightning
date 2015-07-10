@@ -93,10 +93,11 @@
         file.data.date = moment(date).format('MMMM Do, YYYY');
       }
       if ((path.extname(file.path)) === '.md') {
-        if (!file.data.layout) {
-          file.data.layout = 'post';
+        if (file.data.layout) {
+          file.data.layout = "" + config.site.templates + "/" + file.data.layout + ".jade";
+        } else {
+          file.data.layout = "" + config.site.templates + "/post.jade";
         }
-        file.data.layout = "" + config.site.templates + "/" + file.data.layout + ".jade";
         file.data.pretty = true;
       }
       _ref = ['title', 'description', 'og_title', 'og_description', 'twitter_title', 'twitter_description'];
@@ -234,7 +235,7 @@
       return gulp.src("" + config.email.styles + "/main.styl").pipe(plugins.stylus()).pipe(gulp.dest(config.email.build));
     });
     getEmailData = lazypipe().pipe(plugins.data, function(file) {
-      var data, defaultEmailData, dir, email, isAutoresponder, isCampaign, isRSS, isSplitTest, key, locals, metaDataFile, site, slug, value, _base, _base1, _ref;
+      var data, defaultEmailData, dir, email, isAutoresponder, isCampaign, isRSS, isSplitTest, key, locals, metaDataFile, site, slug, value, _base, _ref;
       site = yaml.load("./" + config.site.source + "/site.yml");
       email = require("" + (process.cwd()) + "/" + config.email.source + "/email.json");
       locals = _.extend(email, site);
@@ -312,16 +313,17 @@
       }
       file.mailChimp.options.list_id = locals.lists[file.attributes.list];
       delete file.attributes.list;
-      if ((_base1 = file.data).layout == null) {
-        _base1.layout = file.mailChimp.layout;
-      }
       _ref = file.attributes;
       for (key in _ref) {
         value = _ref[key];
         file.data[key] = value;
       }
       if ((path.extname(file.path)) === '.md') {
-        file.data.layout = "" + config.email.templates + "/" + file.data.layout + ".jade";
+        if (file.attributes.layout) {
+          file.data.layout = "" + config.email.templates + "/" + file.attributes.layout + ".jade";
+        } else {
+          file.data.layout = "" + config.email.templates + "/short.jade";
+        }
         file.data.pretty = true;
       }
       return data = _.extend(locals, file.data);
