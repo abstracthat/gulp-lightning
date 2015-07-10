@@ -503,11 +503,6 @@ module.exports = (gulp, options) ->
       removeLinkTags: false
     .pipe gulp.dest config.email.build
 
-  gulp.task 'email:text', ['email:inline'], ->
-    gulp.src ["#{config.email.build}/**/*.html", "!#{config.email.build}/index.html"]
-    .pipe plugins.html2txt()
-    .pipe gulp.dest config.email.build
-
   gulp.task 'email:images', ->
     gulp.src "#{config.email.images}/*"
     .pipe plugins.plumber()
@@ -544,7 +539,7 @@ module.exports = (gulp, options) ->
 
     gulp.watch "#{config.email.images}/**/*", reload
 
-  gulp.task 'email:reload', ['email:text', 'email:images'], ->
+  gulp.task 'email:reload', ['email:inline', 'email:images'], ->
     reload()
 
   gulp.task 'email', ->
@@ -667,7 +662,7 @@ module.exports = (gulp, options) ->
               console.error "#{key}: #{value}"
 
   # Compile email, move images to ssh server, and sync with mailchimp
-  gulp.task 'mailchimp', ['email:deploy', 'email:text', 'mailchimp:campaigns']
+  gulp.task 'mailchimp', ['email:deploy', 'email:inline', 'mailchimp:campaigns']
 
   #################
   # Main Gulp Tasks

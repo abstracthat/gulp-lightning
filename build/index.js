@@ -367,9 +367,6 @@
         removeLinkTags: false
       })).pipe(gulp.dest(config.email.build));
     });
-    gulp.task('email:text', ['email:inline'], function() {
-      return gulp.src(["" + config.email.build + "/**/*.html", "!" + config.email.build + "/index.html"]).pipe(plugins.html2txt()).pipe(gulp.dest(config.email.build));
-    });
     gulp.task('email:images', function() {
       return gulp.src("" + config.email.images + "/*").pipe(plugins.plumber()).pipe(plugins.cache(plugins.imagemin({
         progressive: true,
@@ -399,7 +396,7 @@
       gulp.watch(["" + config.email.styles + "/**/*", "" + config.email.templates + "/**/*", "" + config.email.content + "/**/*", "" + config.email.images + "/**/*"], ['email:reload']);
       return gulp.watch("" + config.email.images + "/**/*", reload);
     });
-    gulp.task('email:reload', ['email:text', 'email:images'], function() {
+    gulp.task('email:reload', ['email:inline', 'email:images'], function() {
       return reload();
     });
     gulp.task('email', function() {
@@ -604,7 +601,7 @@
         return _results;
       });
     });
-    gulp.task('mailchimp', ['email:deploy', 'email:text', 'mailchimp:campaigns']);
+    gulp.task('mailchimp', ['email:deploy', 'email:inline', 'mailchimp:campaigns']);
     gulp.task('develop', function(done) {
       return runSequence('map', 'compile', 'browser', done);
     });
